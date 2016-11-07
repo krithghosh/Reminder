@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginTop="16dp"
+    android:background="@drawable/card_background">
+
+    <TextView
+        android:id="@+id/task_name"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_toLeftOf="@+id/reminder_time"
+        android:gravity="center_vertical"
+        android:paddingLeft="12dp"
+        android:text="Task name 1"
+        android:textStyle="bold"
+        android:textSize="16dp" />
+
+    <TextView
+        android:id="@+id/reminder_time"
+        android:layout_width="132dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_gravity="end"
+        android:gravity="right|center_vertical"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:text="07 Nov, 03:00 am"
+        android:textSize="12dp" />
+
+</RelativeLayout>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/content_add_edit_task"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.task.krith.taskreminder.Activity.AddEditTask"
+    tools:showIn="@layout/activity_add_edit_task">
+
+    <EditText
+        android:id="@+id/task_name"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_toLeftOf="@+id/camera_iv"
+        android:background="@drawable/text_box_selectable"
+        android:gravity="center_vertical"
+        android:hint="Task Name"
+        android:inputType="textPersonName"
+        android:paddingLeft="8dp"
+        android:textColor="#424242"
+        android:textColorHint="#BDBDBD" />
+
+    <ImageView
+        android:id="@+id/camera_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/task_name"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/task_name"
+        android:layout_marginEnd="12dp"
+        android:layout_marginRight="12dp"
+        app:srcCompat="@android:drawable/ic_menu_camera" />
+
+    <EditText
+        android:id="@+id/description"
+        android:layout_width="wrap_content"
+        android:layout_height="160dp"
+        android:layout_alignEnd="@+id/task_name"
+        android:layout_alignLeft="@+id/task_name"
+        android:layout_alignRight="@+id/task_name"
+        android:layout_alignStart="@+id/task_name"
+        android:layout_below="@+id/task_name"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/text_box_selectable"
+        android:ems="10"
+        android:hint="Description"
+        android:inputType="textMultiLine"
+        android:lines="8"
+        android:maxLines="10"
+        android:minLines="6"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:scrollbars="vertical"
+        android:textColor="#424242"
+        android:textColorHint="#BDBDBD" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="wrap_content"
+        android:layout_height="120dp"
+        android:layout_alignEnd="@+id/description"
+        android:layout_alignLeft="@+id/description"
+        android:layout_alignRight="@+id/description"
+        android:layout_alignStart="@+id/description"
+        android:layout_below="@+id/description"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/text_box_unselected"
+        android:padding="8dp" />
+
+    <Button
+        android:id="@+id/reminder_btn"
+        android:layout_width="160dp"
+        android:layout_height="40dp"
+        android:layout_alignLeft="@+id/recycler_view"
+        android:layout_alignStart="@+id/recycler_view"
+        android:layout_below="@+id/recycler_view"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/reminder_button_selectable"
+        android:text="Reminder"
+        android:textColor="@color/colorAccent" />
+
+    <Button
+        android:id="@+id/save_btn"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:layout_alignBottom="@+id/reminder_btn"
+        android:layout_alignEnd="@+id/recycler_view"
+        android:layout_alignRight="@+id/recycler_view"
+        android:background="@drawable/save_button_selectable"
+        android:text="Save"
+        android:textColor="#43A047" />
+
+</RelativeLayout>

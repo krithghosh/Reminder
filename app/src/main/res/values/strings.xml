@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TaskReminder</string>
+    <string name="db_not_writing">Db Problem !</string>
+    <string name="title_activity_task_list">ToDo</string>
+    <string name="title_activity_add_edit_task">Tasks</string>
+    <string name="set_image_type">image/*</string>
+    <string name="select_file">Select File</string>
+</resources>
