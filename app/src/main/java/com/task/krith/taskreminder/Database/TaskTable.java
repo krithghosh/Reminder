@@ -2,20 +2,24 @@ package com.task.krith.taskreminder.Database;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 
-import com.task.krith.taskreminder.TaskApp;
+import com.squareup.sqlbrite.BriteDatabase;
 import com.task.krith.taskreminder.Model.TaskModel;
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import rx.Observable;
+import rx.functions.Func0;
 import rx.functions.Func1;
+import timber.log.Timber;
 
 /**
  * Created by krith on 05/11/16.
  */
 
 public class TaskTable {
-
-    static SQLiteDatabase db;
 
     public static final String TABLE = "Task";
     public static final String ID = "id";
@@ -25,23 +29,8 @@ public class TaskTable {
     public static final String IS_REMINDER_SET = "is_reminder_set";
     public static final String IMAGES_URI_LIST = "images_uri_list";
     public static final String REMINDER_DATE_TIME = "reminder_date_time";
-    public static final String QUERY_TASK = "SELECT " + ID + ", " + CREATED_TIME + ", " + TASK_NAME + ", " + TASK_DESCRIPTION + ", " + IS_REMINDER_SET + ", " + IMAGES_URI_LIST + ", " + REMINDER_DATE_TIME + " FROM " + TABLE + " WHERE " + ID + "=";
+    public static final String QUERY_TASK = "SELECT " + ID + ", " + CREATED_TIME + ", " + TASK_NAME + ", " + TASK_DESCRIPTION + ", " + IS_REMINDER_SET + ", " + IMAGES_URI_LIST + ", " + REMINDER_DATE_TIME + " FROM " + TABLE + " WHERE " + ID + "=?";
     public static final String QUERY_ALL_TASK = "SELECT " + ID + ", " + CREATED_TIME + ", " + TASK_NAME + ", " + TASK_DESCRIPTION + ", " + IS_REMINDER_SET + ", " + IMAGES_URI_LIST + ", " + REMINDER_DATE_TIME + " FROM " + TABLE;
-
-    /*
-
-    Inserting data into db from ArrayList :
-
-    JSONObject json = new JSONObject();
-    json.put("uniqueArrays", new JSONArray(items));
-    String arrayList = json.toString();
-
-    To read data from the json :
-
-    JSONObject json = new JSONObject(stringreadfromsqlite);
-    ArrayList items = json.optJSONArray("uniqueArrays");
-
-    */
 
     public static final String CREATE_TABLE = ""
             + "CREATE TABLE " + TaskTable.TABLE + "("
@@ -116,9 +105,8 @@ public class TaskTable {
         }
     };
 
-    public static Boolean insertTask(TaskModel obj) {
-        db = DatabaseHelper.getInstance(TaskApp.getInstance()).getWritableDb();
-        long insertRowId = db.insert(TABLE, null, new TaskTable.Builder()
+    public static Boolean insertTask(TaskModel obj, BriteDatabase db) {
+        long insertRowId = db.insert(TABLE, new TaskTable.Builder()
                 .setCreatedTime(obj.getTaskId())
                 .setDescription(obj.getDescription())
                 .setId(obj.getTaskId())
@@ -132,8 +120,7 @@ public class TaskTable {
         return true;
     }
 
-    public static Boolean updateTask(TaskModel obj) {
-        db = DatabaseHelper.getInstance(TaskApp.getInstance()).getWritableDb();
+    public static Boolean updateTask(TaskModel obj, BriteDatabase db) {
         long updateRow = db.update(TABLE, new TaskTable.Builder()
                 .setCreatedTime(System.currentTimeMillis())
                 .setDescription(obj.getDescription())
@@ -147,9 +134,14 @@ public class TaskTable {
         return true;
     }
 
-    public static Cursor getTask(String[] tableColumns, String whereClause, String[] whereArgs) {
-        db = DatabaseHelper.getInstance(TaskApp.getInstance()).getReadableDatabase();
-        Cursor cursor = db.query(TABLE, tableColumns, whereClause, whereArgs, null, null, null);
-        return cursor;
+    public static Observable<TaskModel> getTaskObservable(final long args, final BriteDatabase db) {
+        return Observable.defer(new Func0<Observable<TaskModel>>() {
+            @Override
+            public Observable<TaskModel> call() {
+                Observable<TaskModel> taskModel = db.createQuery(TABLE, QUERY_TASK, String.valueOf(args))
+                        .mapToOne(MAPPER);
+                return taskModel;
+            }
+        });
     }
 }

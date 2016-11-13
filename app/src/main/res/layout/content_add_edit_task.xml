@@ -21,7 +21,7 @@
         android:layout_toLeftOf="@+id/camera_iv"
         android:background="@drawable/text_box_selectable"
         android:gravity="center_vertical"
-        android:hint="Task Name"
+        android:hint="@string/task_name"
         android:inputType="textPersonName"
         android:paddingLeft="8dp"
         android:textColor="#424242"
@@ -42,7 +42,7 @@
     <EditText
         android:id="@+id/description"
         android:layout_width="wrap_content"
-        android:layout_height="160dp"
+        android:layout_height="44dp"
         android:layout_alignEnd="@+id/task_name"
         android:layout_alignLeft="@+id/task_name"
         android:layout_alignRight="@+id/task_name"
@@ -50,12 +50,8 @@
         android:layout_below="@+id/task_name"
         android:layout_marginTop="16dp"
         android:background="@drawable/text_box_selectable"
-        android:ems="10"
-        android:hint="Description"
-        android:inputType="textMultiLine"
-        android:lines="8"
-        android:maxLines="10"
-        android:minLines="6"
+        android:hint="@string/description"
+        android:inputType="text"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
         android:scrollbars="vertical"
@@ -84,7 +80,7 @@
         android:layout_below="@+id/recycler_view"
         android:layout_marginTop="16dp"
         android:background="@drawable/reminder_button_selectable"
-        android:text="Reminder"
+        android:text="@string/reminder"
         android:textColor="@color/colorAccent" />
 
     <Button
@@ -95,7 +91,7 @@
         android:layout_alignEnd="@+id/recycler_view"
         android:layout_alignRight="@+id/recycler_view"
         android:background="@drawable/save_button_selectable"
-        android:text="Save"
+        android:text="@string/save"
         android:textColor="#43A047" />
 
 </RelativeLayout>

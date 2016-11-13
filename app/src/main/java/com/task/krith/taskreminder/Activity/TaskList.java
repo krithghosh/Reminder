@@ -13,7 +13,8 @@ import android.view.View;
 import com.squareup.sqlbrite.BriteDatabase;
 import com.task.krith.taskreminder.R;
 import com.task.krith.taskreminder.Adapters.TaskAdapter;
-import com.task.krith.taskreminder.TaskApp;
+import com.task.krith.taskreminder.SharedPreferenceManager;
+import com.task.krith.taskreminder.TaskApplication;
 import com.task.krith.taskreminder.Model.TaskModel;
 import com.task.krith.taskreminder.Database.TaskTable;
 
@@ -27,6 +28,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+import timber.log.Timber;
 
 public class TaskList extends AppCompatActivity {
 
@@ -38,6 +41,9 @@ public class TaskList extends AppCompatActivity {
 
     @Inject
     BriteDatabase db;
+
+    @Inject
+    SharedPreferenceManager sharedPreferenceManager;
 
     private Subscription subscription;
 
@@ -51,9 +57,11 @@ public class TaskList extends AppCompatActivity {
         ButterKnife.bind(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Tasks");
+        ((TaskApplication) getApplicationContext()).getComponent().inject(this);
+        if (SharedPreferenceManager.sharedPreferences != null) {
+            Timber.tag("shared pref").v("not empty");
+        }
         toolbar.setTitleTextColor(getResources().getColor(R.color.text_color));
-        db = TaskApp.getDb();
         taskAdapter = new TaskAdapter(taskList);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
@@ -77,6 +85,7 @@ public class TaskList extends AppCompatActivity {
         String table = TaskTable.TABLE;
         subscription = db.createQuery(table, query)
                 .mapToList(TaskTable.MAPPER)
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(taskAdapter);
     }

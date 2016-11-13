@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -14,7 +13,6 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -23,11 +21,12 @@ import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.squareup.sqlbrite.BriteDatabase;
-import com.task.krith.taskreminder.Database.Db;
 import com.task.krith.taskreminder.Adapters.ImageAdapter;
 import com.task.krith.taskreminder.R;
 import com.task.krith.taskreminder.Model.TaskModel;
 import com.task.krith.taskreminder.Database.TaskTable;
+import com.task.krith.taskreminder.SharedPreferenceManager;
+import com.task.krith.taskreminder.TaskApplication;
 import com.task.krith.taskreminder.Utilities.Toaster;
 import com.task.krith.taskreminder.Utilities.ActivityUtils;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
@@ -49,6 +48,11 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import rx.Subscriber;
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+import timber.log.Timber;
 
 public class AddEditTask extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener,
         DatePickerDialog.OnDateSetListener {
@@ -74,9 +78,14 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
     @Inject
     BriteDatabase db;
 
+    @Inject
+    SharedPreferenceManager sharedPreferenceManager;
+
     Calendar reminderCalendar = null;
 
     Context context;
+
+    private Subscription subscription;
 
     private static final int REQUEST_CAMERA = 0;
     private static final int SELECT_FILE = 1;
@@ -96,7 +105,9 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
         context = this;
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Add Task");
+        ((TaskApplication) getApplicationContext()).getComponent().inject(this);
+        taskName.setText("");
+        description.setText("");
         toolbar.setTitleTextColor(getResources().getColor(R.color.text_color));
         taskObj = new TaskModel();
         isDateSet = false;
@@ -110,9 +121,6 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         onNewIntent(getIntent());
-        /*if (getIntent().hasExtra("taskid")) {
-
-        }*/
     }
 
     @OnClick(R.id.camera_iv)
@@ -137,6 +145,9 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
     public void onClickSaveBtn() {
         try {
             if (getIntent().hasExtra("taskid")) {
+                if (reminderCalendar == null) {
+                    reminderCalendar = Calendar.getInstance();
+                }
                 if (!taskObj.getTaskName().equals(taskName.getText().toString())
                         || !taskObj.getDescription().equals(description.getText().toString())
                         || !checkForImageList()
@@ -201,7 +212,8 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
                 }
             }
         } catch (Exception e) {
-            Toaster.toast("Please fill all the details");
+            Timber.tag("Error").d(e.getMessage());
+            Toaster.toast("Error");
         }
     }
 
@@ -305,7 +317,7 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
 
     public void insertData(TaskModel obj) throws UnsupportedEncodingException {
 
-        if (!TaskTable.insertTask(obj))
+        if (!TaskTable.insertTask(obj, db))
             Toaster.toast("Please try adding later, there is some problem");
         else {
             Toaster.toast("Saved");
@@ -317,7 +329,7 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
 
     public void updateData(TaskModel obj) throws UnsupportedEncodingException {
 
-        if (!TaskTable.updateTask(obj))
+        if (!TaskTable.updateTask(obj, db))
             Toaster.toast("Please try adding later, there is some problem");
         else {
             Toaster.toast("Updated");
@@ -363,6 +375,14 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (subscription != null || !subscription.isUnsubscribed()) {
+            subscription.unsubscribe();
+        }
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
@@ -376,56 +396,51 @@ public class AddEditTask extends AppCompatActivity implements TimePickerDialog.O
             if (extras.containsKey("taskid")) {
                 saveBtn.setText("UPDATE");
                 long taskId = getIntent().getLongExtra("taskid", 0);
-                String[] tableColumns = new String[]{
-                        TaskTable.ID,
-                        TaskTable.TASK_NAME,
-                        TaskTable.TASK_DESCRIPTION,
-                        TaskTable.CREATED_TIME,
-                        TaskTable.IS_REMINDER_SET,
-                        TaskTable.IMAGES_URI_LIST,
-                        TaskTable.REMINDER_DATE_TIME
-                };
-                String whereClause = TaskTable.ID + "=?";
-                String[] whereArgs = new String[]{
-                        String.valueOf(taskId)
-                };
-                try {
-                    Cursor cursor = TaskTable.getTask(tableColumns, whereClause, whereArgs);
-                    if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
-                        taskObj.setTaskId(Db.getLong(cursor, TaskTable.ID));
-                        taskObj.setTaskName(Db.getString(cursor, TaskTable.TASK_NAME));
-                        taskObj.setCreatedTime(Db.getLong(cursor, TaskTable.CREATED_TIME));
-                        taskObj.setDescription(Db.getString(cursor, TaskTable.TASK_DESCRIPTION));
-                        taskObj.setReminderSet(Db.getBoolean(cursor, TaskTable.IS_REMINDER_SET));
-                        taskObj.setImagesUriList(Db.getString(cursor, TaskTable.IMAGES_URI_LIST));
-                        taskObj.setReminderDateTime(Db.getLong(cursor, TaskTable.REMINDER_DATE_TIME));
-                        taskName.setText(taskObj.getTaskName());
-                        description.setText(taskObj.getDescription());
-                        if (Db.getString(cursor, TaskTable.IMAGES_URI_LIST) != null) {
-                            JSONObject json = new JSONObject(Db.getString(cursor, TaskTable.IMAGES_URI_LIST));
-                            JSONArray jsonArray = json.getJSONArray("imageArray");
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                imageList.add(jsonArray.get(i).toString());
+                subscription = TaskTable.getTaskObservable(taskId, db)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Subscriber<TaskModel>() {
+                            @Override
+                            public void onCompleted() {
+                                Timber.tag("Task").d("on Complete");
                             }
-                            imageAdapter.notifyDataSetChanged();
-                        }
-                        if (Db.getBoolean(cursor, TaskTable.IS_REMINDER_SET)) {
-                            long _time = Db.getLong(cursor, TaskTable.REMINDER_DATE_TIME);
-                            Calendar calendar = Calendar.getInstance();
-                            calendar.setTimeInMillis(_time);
-                            Date time = calendar.getTime();
-                            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, hh:mm a");
-                            reminderBtn.setText(sdf.format(time));
-                            reminderCalendar = calendar;
-                            isDateSet = true;
-                            isTimeSet = true;
-                        }
-                    }
-                    cursor.close();
-                } catch (Exception e) {
-                    Log.d("Error", "" + e);
-                    Toaster.toast("Db cursor error");
-                }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                Timber.tag("Task").d("error " + e.getMessage());
+                            }
+
+                            @Override
+                            public void onNext(TaskModel taskModel) {
+                                try {
+                                    taskObj = taskModel;
+                                    taskName.setText(taskModel.getTaskName());
+                                    description.setText(taskModel.getDescription());
+                                    if (taskModel.getImagesUriList() != null) {
+                                        JSONObject json =
+                                                new JSONObject(taskModel.getImagesUriList());
+                                        JSONArray jsonArray = json.getJSONArray("imageArray");
+                                        for (int i = 0; i < jsonArray.length(); i++) {
+                                            imageList.add(jsonArray.get(i).toString());
+                                        }
+                                    }
+                                    if (taskModel.isReminderSet()) {
+                                        long _time = taskModel.getReminderDateTime();
+                                        Calendar calendar = Calendar.getInstance();
+                                        calendar.setTimeInMillis(_time);
+                                        Date time = calendar.getTime();
+                                        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, hh:mm a");
+                                        reminderBtn.setText(sdf.format(time));
+                                        reminderCalendar = calendar;
+                                        isDateSet = true;
+                                        isTimeSet = true;
+                                    }
+                                    imageAdapter.notifyDataSetChanged();
+                                } catch (Exception e) {
+                                    Timber.tag("Task").d("Error " + e.getMessage());
+                                }
+                            }
+                        });
             }
         }
     }
